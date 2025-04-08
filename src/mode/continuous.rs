@@ -1,5 +1,5 @@
 use crate::{error::Error, AllowCommunication, VL6180X};
-use embedded_hal::blocking::i2c::{Write, WriteRead};
+use embedded_hal::i2c::I2c;
 
 use super::{AllowReadMeasurement, AllowStartAmbientSingle, AllowStartRangeSingle, ReadyMode};
 
@@ -13,12 +13,12 @@ impl AllowStartAmbientSingle for RangeContinuousMode {}
 
 impl AllowCommunication for RangeContinuousMode {}
 
-impl<I2C, E> VL6180X<RangeContinuousMode, I2C>
+impl<I2C> VL6180X<RangeContinuousMode, I2C>
 where
-    I2C: WriteRead<Error = E> + Write<Error = E>,
+    I2C: I2c,
 {
     /// Stops range continuous mode.
-    pub fn stop_range_continuous_mode(mut self) -> Result<VL6180X<ReadyMode, I2C>, Error<E>> {
+    pub fn stop_range_continuous_mode(mut self) -> Result<VL6180X<ReadyMode, I2C>, Error<I2C::Error>> {
         self.toggle_range_continuous_direct()?;
         Ok(self.into_mode(ReadyMode {}))
     }
@@ -34,12 +34,12 @@ impl AllowStartRangeSingle for AmbientContinuousMode {}
 
 impl AllowCommunication for AmbientContinuousMode {}
 
-impl<I2C, E> VL6180X<AmbientContinuousMode, I2C>
+impl<I2C> VL6180X<AmbientContinuousMode, I2C>
 where
-    I2C: WriteRead<Error = E> + Write<Error = E>,
+    I2C: I2c,
 {
     /// Stops ambient continuous mode.
-    pub fn stop_ambient_continuous_mode(mut self) -> Result<VL6180X<ReadyMode, I2C>, Error<E>> {
+    pub fn stop_ambient_continuous_mode(mut self) -> Result<VL6180X<ReadyMode, I2C>, Error<I2C::Error>> {
         self.toggle_ambient_continuous_direct()?;
         Ok(self.into_mode(ReadyMode {}))
     }
@@ -56,12 +56,12 @@ impl AllowReadMeasurement for InterleavedContinuousMode {}
 
 impl AllowCommunication for InterleavedContinuousMode {}
 
-impl<I2C, E> VL6180X<InterleavedContinuousMode, I2C>
+impl<I2C> VL6180X<InterleavedContinuousMode, I2C>
 where
-    I2C: WriteRead<Error = E> + Write<Error = E>,
+    I2C: I2c,
 {
     /// Stops interleaved continuous mode.
-    pub fn stop_interleaved_continuous_mode(mut self) -> Result<VL6180X<ReadyMode, I2C>, Error<E>> {
+    pub fn stop_interleaved_continuous_mode(mut self) -> Result<VL6180X<ReadyMode, I2C>, Error<I2C::Error>> {
         self.stop_interleaved_continuous_direct()?;
         Ok(self.into_mode(ReadyMode {}))
     }

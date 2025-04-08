@@ -1,17 +1,17 @@
 use super::*;
 use crate::register::{Register16Bit, Register8Bit};
 
-impl<MODE, I2C, E> VL6180X<MODE, I2C>
+impl<MODE, I2C> VL6180X<MODE, I2C>
 where
-    I2C: WriteRead<Error = E> + Write<Error = E>,
+    I2C: I2c,
 {
     /// Reads a named 8-bit register
-    pub(crate) fn read_named_register(&mut self, reg: Register8Bit) -> Result<u8, E> {
+    pub(crate) fn read_named_register(&mut self, reg: Register8Bit) -> Result<u8, I2C::Error> {
         self.read_register(reg as u16)
     }
 
     /// Reads an 8-bit register
-    fn read_register(&mut self, reg: u16) -> Result<u8, E> {
+    fn read_register(&mut self, reg: u16) -> Result<u8, I2C::Error> {
         let mut data: [u8; 1] = [0];
         let reg: [u8; 2] = reg.to_be_bytes();
 
@@ -20,12 +20,12 @@ where
     }
 
     /// Reads a named 16-bit register
-    pub(crate) fn read_named_register_16bit(&mut self, reg: Register16Bit) -> Result<u16, E> {
+    pub(crate) fn read_named_register_16bit(&mut self, reg: Register16Bit) -> Result<u16, I2C::Error> {
         self.read_register_16bit(reg as u16)
     }
 
     /// Reads a 16-bit register
-    fn read_register_16bit(&mut self, reg: u16) -> Result<u16, E> {
+    fn read_register_16bit(&mut self, reg: u16) -> Result<u16, I2C::Error> {
         let mut data: [u8; 2] = [0, 0];
         let reg: [u8; 2] = reg.to_be_bytes();
 
@@ -34,12 +34,12 @@ where
     }
 
     /// Reads a named 32-bit register
-    fn read_named_register_32bit(&mut self, reg: Register16Bit) -> Result<u32, E> {
+    fn read_named_register_32bit(&mut self, reg: Register16Bit) -> Result<u32, I2C::Error> {
         self.read_register_32bit(reg as u16)
     }
 
     /// Reads a 32-bit register
-    fn read_register_32bit(&mut self, reg: u16) -> Result<u32, E> {
+    fn read_register_32bit(&mut self, reg: u16) -> Result<u32, I2C::Error> {
         let mut data: [u8; 4] = [0, 0, 0, 0];
         let reg: [u8; 2] = reg.to_be_bytes();
 
@@ -51,21 +51,21 @@ where
         &mut self,
         reg: Register8Bit,
         code: u8,
-    ) -> Result<(), E> {
+    ) -> Result<(), I2C::Error> {
         self.write_only_register(reg as u16, code)
     }
 
-    pub(super) fn write_only_register(&mut self, reg: u16, code: u8) -> Result<(), E> {
+    pub(super) fn write_only_register(&mut self, reg: u16, code: u8) -> Result<(), I2C::Error> {
         let reg = reg.to_be_bytes();
         let bytes: [u8; 3] = [reg[0], reg[1], code];
         self.com.write(self.config.address, &bytes)
     }
 
-    pub(super) fn write_named_register(&mut self, reg: Register8Bit, code: u8) -> Result<(), E> {
+    pub(super) fn write_named_register(&mut self, reg: Register8Bit, code: u8) -> Result<(), I2C::Error> {
         self.write_register(reg as u16, code)
     }
 
-    pub(super) fn write_register(&mut self, reg: u16, code: u8) -> Result<(), E> {
+    pub(super) fn write_register(&mut self, reg: u16, code: u8) -> Result<(), I2C::Error> {
         let mut buffer = [0];
         let reg = reg.to_be_bytes();
         let bytes: [u8; 3] = [reg[0], reg[1], code];
@@ -77,11 +77,11 @@ where
         &mut self,
         reg: Register16Bit,
         code: u16,
-    ) -> Result<(), E> {
+    ) -> Result<(), I2C::Error> {
         self.write_register_16bit(reg as u16, code)
     }
 
-    fn write_register_16bit(&mut self, reg: u16, code: u16) -> Result<(), E> {
+    fn write_register_16bit(&mut self, reg: u16, code: u16) -> Result<(), I2C::Error> {
         let mut buffer = [0];
         let code = code.to_be_bytes();
         let reg = reg.to_be_bytes();
@@ -94,11 +94,11 @@ where
         &mut self,
         reg: Register16Bit,
         code: u32,
-    ) -> Result<(), E> {
+    ) -> Result<(), I2C::Error> {
         self.write_register_32bit(reg as u32, code)
     }
 
-    fn write_register_32bit(&mut self, reg: u32, code: u32) -> Result<(), E> {
+    fn write_register_32bit(&mut self, reg: u32, code: u32) -> Result<(), I2C::Error> {
         let mut buffer = [0];
         let code = code.to_be_bytes();
         let reg = reg.to_be_bytes();

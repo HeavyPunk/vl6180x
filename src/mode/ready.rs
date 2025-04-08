@@ -1,6 +1,6 @@
 use crate::{error::Error, Config};
 use crate::{AllowCommunication, VL6180X};
-use embedded_hal::blocking::i2c::{Write, WriteRead};
+use embedded_hal::i2c::I2c;
 
 use super::{
     AllowReadMeasurement, AllowStartAmbientSingle, AllowStartRangeSingle, AmbientContinuousMode,
@@ -19,18 +19,18 @@ impl AllowStartRangeSingle for ReadyMode {}
 
 impl AllowStartAmbientSingle for ReadyMode {}
 
-impl<I2C, E> VL6180X<ReadyMode, I2C>
+impl<I2C> VL6180X<ReadyMode, I2C>
 where
-    I2C: WriteRead<Error = E> + Write<Error = E>,
+    I2C: I2c,
 {
     /// Create a new VL6180X driver
-    pub fn new(i2c: I2C) -> Result<Self, Error<E>> {
+    pub fn new(i2c: I2C) -> Result<Self, Error<I2C::Error>> {
         let default_config = &Config::new();
         VL6180X::with_config(i2c, &default_config)
     }
 
     /// Create a new VL6180X driver cloning provided config values
-    pub fn with_config(i2c: I2C, config: &Config) -> Result<Self, Error<E>> {
+    pub fn with_config(i2c: I2C, config: &Config) -> Result<Self, Error<I2C::Error>> {
         let mut chip = Self {
             mode: ReadyMode,
             com: i2c,
@@ -59,14 +59,14 @@ where
     /// Poll the sensor for a single range measurement.
     /// Starts a single range measurement then calls [`read_range_mm_blocking`](VL6180X::read_range_mm_blocking)
     /// to wait for the result.
-    pub fn poll_range_mm_single_blocking(&mut self) -> Result<u16, Error<E>> {
+    pub fn poll_range_mm_single_blocking(&mut self) -> Result<u16, Error<I2C::Error>> {
         self.poll_range_mm_single_blocking_direct()
     }
 
     /// Poll the sensor for a single ambient light measurement.
     /// Starts a single ambient measurement then calls [`read_ambient_lux_blocking`](VL6180X::read_ambient_lux_blocking)
     /// to wait for the result.
-    pub fn poll_ambient_lux_single_blocking(&mut self) -> Result<f32, Error<E>> {
+    pub fn poll_ambient_lux_single_blocking(&mut self) -> Result<f32, Error<I2C::Error>> {
         self.poll_ambient_lux_single_blocking_direct()
     }
 
@@ -77,7 +77,7 @@ where
     /// 2. [range_max_convergence_time](crate::config::Config::set_range_max_convergence_time())
     pub fn start_range_continuous_mode(
         self,
-    ) -> Result<VL6180X<RangeContinuousMode, I2C>, Error<E>> {
+    ) -> Result<VL6180X<RangeContinuousMode, I2C>, Error<I2C::Error>> {
         let mut new_vl6180x = self.into_mode(RangeContinuousMode {});
         new_vl6180x.toggle_range_continuous_direct()?;
         Ok(new_vl6180x)
@@ -86,7 +86,7 @@ where
     /// Starts continuous operation mode for reading ambient light measurements.
     pub fn start_ambient_continuous_mode(
         self,
-    ) -> Result<VL6180X<AmbientContinuousMode, I2C>, Error<E>> {
+    ) -> Result<VL6180X<AmbientContinuousMode, I2C>, Error<I2C::Error>> {
         let mut new_vl6180x = self.into_mode(AmbientContinuousMode {});
         new_vl6180x.toggle_ambient_continuous_direct()?;
         Ok(new_vl6180x)
@@ -96,7 +96,7 @@ where
     /// The intermeasurement period is set by the [`ambient_inter_measurement_period`](crate::config::Config::set_ambient_inter_measurement_period)
     pub fn start_interleaved_continuous_mode(
         self,
-    ) -> Result<VL6180X<InterleavedContinuousMode, I2C>, Error<E>> {
+    ) -> Result<VL6180X<InterleavedContinuousMode, I2C>, Error<I2C::Error>> {
         let mut new_vl6180x = self.into_mode(InterleavedContinuousMode {});
         new_vl6180x.enable_interleaved_continuous_direct()?;
         Ok(new_vl6180x)

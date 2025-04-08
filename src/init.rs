@@ -3,15 +3,15 @@ use crate::register::{
     Register16Bit::*, Register8Bit::*, SysModeGpio1Polarity, SysModeGpio1Select,
     AMBIENT_ANALOGUE_GAIN_CODE, RANGE_SCALAR_CODE,
 };
-use embedded_hal::blocking::i2c::{Write, WriteRead};
+use embedded_hal::i2c::I2c;
 
-impl<MODE, I2C, E> VL6180X<MODE, I2C>
+impl<MODE, I2C> VL6180X<MODE, I2C>
 where
-    I2C: WriteRead<Error = E> + Write<Error = E>,
+    I2C: I2c,
 {
     /// Initialize sensor with settings from ST application note AN4545,
     /// section "SR03 settings" - "Mandatory : private registers"
-    pub(crate) fn init_hardware(&mut self) -> Result<(), E> {
+    pub(crate) fn init_hardware(&mut self) -> Result<(), I2C::Error> {
         // Store part-to-part range offset so it can be adjusted if scaling is changed
         self.config.ptp_offset = self.read_named_register(SYSRANGE__PART_TO_PART_RANGE_OFFSET)?;
 
@@ -55,7 +55,7 @@ where
 
     /// See VL6180X datasheet and application note to understand how the config
     /// values get transformed into the values the registers are set to.
-    fn set_configuration(&mut self) -> Result<(), E> {
+    fn set_configuration(&mut self) -> Result<(), I2C::Error> {
         self.write_named_register(
             READOUT__AVERAGING_SAMPLE_PERIOD,
             self.config.readout_averaging_period_multiplier,
@@ -108,7 +108,7 @@ where
         Ok(())
     }
 
-    fn set_interrupts(&mut self) -> Result<(), E> {
+    fn set_interrupts(&mut self) -> Result<(), I2C::Error> {
         // Set the interrupt mode
         let interrupt_val =
             self.config.range_interrupt_mode as u8 | self.config.ambient_interrupt_mode as u8;
@@ -147,7 +147,7 @@ where
 
         Ok(())
     }
-    fn set_range_scaling(&mut self, new_scaling: u8) -> Result<(), E> {
+    fn set_range_scaling(&mut self, new_scaling: u8) -> Result<(), I2C::Error> {
         const DEFAULT_CROSSTALK_VALID_HEIGHT: u8 = 20; // default value of SYSRANGE__CROSSTALK_VALID_HEIGHT
 
         let scaling = new_scaling;

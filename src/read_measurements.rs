@@ -8,13 +8,13 @@ use crate::{
     },
     VL6180X,
 };
-use embedded_hal::blocking::i2c::{Write, WriteRead};
+use embedded_hal::i2c::I2c;
 
-impl<MODE, I2C, E> VL6180X<MODE, I2C>
+impl<MODE, I2C> VL6180X<MODE, I2C>
 where
-    I2C: WriteRead<Error = E> + Write<Error = E>,
+    I2C: I2c,
 {
-    pub(crate) fn read_range_mm_blocking_direct(&mut self) -> Result<u16, Error<E>> {
+    pub(crate) fn read_range_mm_blocking_direct(&mut self) -> Result<u16, Error<I2C::Error>> {
         let mut c = 0;
         while ResultInterruptStatusGpioCode::has_status(
             ResultInterruptStatusGpioCode::NoRangeEvents,
@@ -29,7 +29,7 @@ where
         self.get_range_val_and_status()
     }
 
-    pub(crate) fn read_range_mm_direct(&mut self) -> Result<u16, Error<E>> {
+    pub(crate) fn read_range_mm_direct(&mut self) -> Result<u16, Error<I2C::Error>> {
         let interrupt_status =
             self.read_named_register(Register8Bit::RESULT__INTERRUPT_STATUS_GPIO)?;
         if ResultInterruptStatusGpioCode::has_status(
@@ -41,7 +41,7 @@ where
         self.get_range_val_and_status()
     }
 
-    fn get_range_val_and_status(&mut self) -> Result<u16, Error<E>> {
+    fn get_range_val_and_status(&mut self) -> Result<u16, Error<I2C::Error>> {
         let status = self.read_named_register(Register8Bit::RESULT__RANGE_STATUS)?;
         self.clear_range_interrupt_direct()?;
         let error = RangeStatusErrorCode::try_from(status)
@@ -57,7 +57,7 @@ where
         self.config.range_scaling as u16 * raw_range as u16
     }
 
-    pub(crate) fn read_ambient_lux_blocking_direct(&mut self) -> Result<f32, Error<E>> {
+    pub(crate) fn read_ambient_lux_blocking_direct(&mut self) -> Result<f32, Error<I2C::Error>> {
         let mut c = 0;
         while ResultInterruptStatusGpioCode::has_status(
             ResultInterruptStatusGpioCode::NoAmbientEvents,
@@ -72,7 +72,7 @@ where
         Ok(self.convert_raw_ambient_to_lux(raw_ambient))
     }
 
-    pub(crate) fn read_ambient_lux_direct(&mut self) -> Result<f32, Error<E>> {
+    pub(crate) fn read_ambient_lux_direct(&mut self) -> Result<f32, Error<I2C::Error>> {
         if ResultInterruptStatusGpioCode::has_status(
             ResultInterruptStatusGpioCode::NoAmbientEvents,
             self.read_named_register(Register8Bit::RESULT__INTERRUPT_STATUS_GPIO)?,
@@ -83,7 +83,7 @@ where
         Ok(self.convert_raw_ambient_to_lux(raw_ambient))
     }
 
-    pub(crate) fn read_ambient_blocking_direct(&mut self) -> Result<u16, Error<E>> {
+    pub(crate) fn read_ambient_blocking_direct(&mut self) -> Result<u16, Error<I2C::Error>> {
         let mut c = 0;
         while ResultInterruptStatusGpioCode::has_status(
             ResultInterruptStatusGpioCode::NoAmbientEvents,
@@ -97,7 +97,7 @@ where
         self.get_ambient_val_and_status()
     }
 
-    pub(crate) fn read_ambient_direct(&mut self) -> Result<u16, Error<E>> {
+    pub(crate) fn read_ambient_direct(&mut self) -> Result<u16, Error<I2C::Error>> {
         if ResultInterruptStatusGpioCode::has_status(
             ResultInterruptStatusGpioCode::NoAmbientEvents,
             self.read_named_register(Register8Bit::RESULT__INTERRUPT_STATUS_GPIO)?,
@@ -107,7 +107,7 @@ where
         self.get_ambient_val_and_status()
     }
 
-    fn get_ambient_val_and_status(&mut self) -> Result<u16, Error<E>> {
+    fn get_ambient_val_and_status(&mut self) -> Result<u16, Error<I2C::Error>> {
         let status = self.read_named_register(Register8Bit::RESULT__ALS_STATUS)?;
         self.clear_ambient_interrupt_direct()?;
         let error = AmbientStatusErrorCode::try_from(status)

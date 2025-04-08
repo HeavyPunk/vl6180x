@@ -8,12 +8,12 @@ keywords = ["hal", "IO",  "embedded-hal-driver", "vl6180x", "tof"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/lucazulian/vl6180x"
-edition = "2018"
+edition = "2021"
 exclude = [ "doc", "*.jpg", "*.png", "*.bmp" ]
 
 [dependencies]
-embedded-hal = {version = "0.2.7", features = ["unproven"]}
-int-enum = {version = "0.4.0", default-features = false}
+embedded-hal = {version = "=1.0.0"}
+int-enum = {version = "1.2", default-features = false}
 
 [profile.release]
 codegen-units = 1

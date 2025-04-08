@@ -1,8 +1,8 @@
 use crate::error::{Error, Error2};
 use crate::VL6180X;
 use embedded_hal::{
-    blocking::i2c::{Write, WriteRead},
-    digital::v2::OutputPin,
+    i2c::I2c,
+    digital::OutputPin,
 };
 use OperatingMode::*;
 
@@ -39,14 +39,14 @@ impl DynamicMode {
     }
 }
 
-impl<I2C, E> VL6180X<DynamicMode, I2C>
+impl<I2C> VL6180X<DynamicMode, I2C>
 where
-    I2C: WriteRead<Error = E> + Write<Error = E>,
+    I2C: I2c,
 {
     /// Same functionality as [`poll_range_mm_single_blocking()`](VL6180X::poll_range_mm_single_blocking)
     /// but with a check on the current [OperatingMode].
     /// Valid when OperatingMode is [Ready], otherwise returns [Error::InvalidMethod]
-    pub fn try_poll_range_mm_single_blocking(&mut self) -> Result<u16, Error<E>> {
+    pub fn try_poll_range_mm_single_blocking(&mut self) -> Result<u16, Error<I2C::Error>> {
         if self.mode.operating_mode != Ready {
             return Err(Error::InvalidMethod(self.mode.operating_mode));
         }
@@ -56,7 +56,7 @@ where
     /// Same functionality as [`poll_ambient_lux_single_blocking()`](VL6180X::poll_ambient_lux_single_blocking)
     /// but with a check on the current [OperatingMode].
     /// Valid when OperatingMode is [Ready], otherwise returns [Error::InvalidMethod]
-    pub fn try_poll_ambient_lux_single_blocking(&mut self) -> Result<f32, Error<E>> {
+    pub fn try_poll_ambient_lux_single_blocking(&mut self) -> Result<f32, Error<I2C::Error>> {
         if self.mode.operating_mode != Ready {
             return Err(Error::InvalidMethod(self.mode.operating_mode));
         }
@@ -66,7 +66,7 @@ where
     /// Same functionality as [`start_range_continuous_mode()`](VL6180X::start_range_continuous_mode)
     /// but with a check on the current [OperatingMode].
     /// Valid when OperatingMode is [Ready], otherwise returns [Error::InvalidMethod]
-    pub fn try_start_range_continuous_mode(&mut self) -> Result<(), Error<E>> {
+    pub fn try_start_range_continuous_mode(&mut self) -> Result<(), Error<I2C::Error>> {
         if self.mode.operating_mode != Ready {
             return Err(Error::InvalidMethod(self.mode.operating_mode));
         }
@@ -78,7 +78,7 @@ where
     /// Same functionality as [`stop_range_continuous_mode()`](VL6180X::stop_range_continuous_mode)
     /// but with a check on the current [OperatingMode].
     /// Valid when OperatingMode is [RangeContinuous], otherwise returns [Error::InvalidMethod]
-    pub fn try_stop_range_continuous_mode(&mut self) -> Result<(), Error<E>> {
+    pub fn try_stop_range_continuous_mode(&mut self) -> Result<(), Error<I2C::Error>> {
         if self.mode.operating_mode != RangeContinuous {
             return Err(Error::InvalidMethod(self.mode.operating_mode));
         }
@@ -90,7 +90,7 @@ where
     /// Same functionality as [`start_ambient_continuous_mode()`](VL6180X::start_ambient_continuous_mode)
     /// but with a check on the current [OperatingMode].
     /// Valid when OperatingMode is [Ready], otherwise returns [Error::InvalidMethod]
-    pub fn try_start_ambient_continuous_mode(&mut self) -> Result<(), Error<E>> {
+    pub fn try_start_ambient_continuous_mode(&mut self) -> Result<(), Error<I2C::Error>> {
         if self.mode.operating_mode != Ready {
             return Err(Error::InvalidMethod(self.mode.operating_mode));
         }
@@ -102,7 +102,7 @@ where
     /// Same functionality as [`stop_ambient_continuous_mode()`](VL6180X::stop_ambient_continuous_mode)
     /// but with a check on the current [OperatingMode].
     /// Valid when OperatingMode is [AmbientContinuous], otherwise returns [Error::InvalidMethod]
-    pub fn try_stop_ambient_continuous_mode(&mut self) -> Result<(), Error<E>> {
+    pub fn try_stop_ambient_continuous_mode(&mut self) -> Result<(), Error<I2C::Error>> {
         if self.mode.operating_mode != AmbientContinuous {
             return Err(Error::InvalidMethod(self.mode.operating_mode));
         }
@@ -114,7 +114,7 @@ where
     /// Same functionality as [`start_interleaved_continuous_mode()`](VL6180X::start_interleaved_continuous_mode)
     /// but with a check on the current [OperatingMode].
     /// Valid when OperatingMode is [Ready], otherwise returns [Error::InvalidMethod]
-    pub fn try_start_interleaved_continuous_mode(&mut self) -> Result<(), Error<E>> {
+    pub fn try_start_interleaved_continuous_mode(&mut self) -> Result<(), Error<I2C::Error>> {
         if self.mode.operating_mode != Ready {
             return Err(Error::InvalidMethod(self.mode.operating_mode));
         }
@@ -126,7 +126,7 @@ where
     /// Same functionality as [`stop_interleaved_continuous_mode()`](VL6180X::stop_interleaved_continuous_mode)
     /// but with a check on the current [OperatingMode].
     /// Valid when OperatingMode is [InterleavedContinuous], otherwise returns [Error::InvalidMethod]
-    pub fn try_stop_interleaved_continuous_mode(&mut self) -> Result<(), Error<E>> {
+    pub fn try_stop_interleaved_continuous_mode(&mut self) -> Result<(), Error<I2C::Error>> {
         if self.mode.operating_mode != InterleavedContinuous {
             return Err(Error::InvalidMethod(self.mode.operating_mode));
         }
@@ -139,7 +139,7 @@ where
     /// but with a check on the current [OperatingMode].
     /// Valid when OperatingMode is [Ready] or [AmbientContinuous],
     /// otherwise returns [Error::InvalidMethod]
-    pub fn try_start_range_single(&mut self) -> Result<(), E> {
+    pub fn try_start_range_single(&mut self) -> Result<(), I2C::Error> {
         self.start_range_single_direct()
     }
 
@@ -147,7 +147,7 @@ where
     /// but with a check on the current [OperatingMode].
     /// Valid when OperatingMode is [Ready] or [RangeContinuous],
     /// otherwise returns [Error::InvalidMethod]
-    pub fn try_start_ambient_single(&mut self) -> Result<(), E> {
+    pub fn try_start_ambient_single(&mut self) -> Result<(), I2C::Error> {
         self.start_ambient_single_direct()
     }
 
@@ -155,7 +155,7 @@ where
     /// but with a check on the current [OperatingMode].
     /// Valid in all OperatingModes except [PoweredOff],
     /// in which case will return [Error::InvalidMethod]
-    pub fn try_read_range_mm_blocking(&mut self) -> Result<u16, Error<E>> {
+    pub fn try_read_range_mm_blocking(&mut self) -> Result<u16, Error<I2C::Error>> {
         if self.mode.operating_mode == PoweredOff {
             return Err(Error::InvalidMethod(self.mode.operating_mode));
         }
@@ -166,7 +166,7 @@ where
     /// but with a check on the current [OperatingMode].
     /// Valid in all OperatingModes except [PoweredOff],
     /// in which case will return [Error::InvalidMethod]
-    pub fn try_read_range_mm(&mut self) -> Result<u16, Error<E>> {
+    pub fn try_read_range_mm(&mut self) -> Result<u16, Error<I2C::Error>> {
         if self.mode.operating_mode == PoweredOff {
             return Err(Error::InvalidMethod(self.mode.operating_mode));
         }
@@ -177,7 +177,7 @@ where
     /// but with a check on the current [OperatingMode].
     /// Valid in all OperatingModes except [PoweredOff],
     /// in which case will return [Error::InvalidMethod]
-    pub fn try_read_ambient_lux_blocking(&mut self) -> Result<f32, Error<E>> {
+    pub fn try_read_ambient_lux_blocking(&mut self) -> Result<f32, Error<I2C::Error>> {
         if self.mode.operating_mode == PoweredOff {
             return Err(Error::InvalidMethod(self.mode.operating_mode));
         }
@@ -188,7 +188,7 @@ where
     /// but with a check on the current [OperatingMode].
     /// Valid in all OperatingModes except [PoweredOff],
     /// in which case will return [Error::InvalidMethod]
-    pub fn try_read_ambient_lux(&mut self) -> Result<f32, Error<E>> {
+    pub fn try_read_ambient_lux(&mut self) -> Result<f32, Error<I2C::Error>> {
         if self.mode.operating_mode == PoweredOff {
             return Err(Error::InvalidMethod(self.mode.operating_mode));
         }
@@ -199,7 +199,7 @@ where
     /// but with a check on the current [OperatingMode].
     /// Valid in all OperatingModes except [PoweredOff],
     /// in which case will return [Error::InvalidMethod]
-    pub fn try_read_ambient_blocking(&mut self) -> Result<u16, Error<E>> {
+    pub fn try_read_ambient_blocking(&mut self) -> Result<u16, Error<I2C::Error>> {
         if self.mode.operating_mode == PoweredOff {
             return Err(Error::InvalidMethod(self.mode.operating_mode));
         }
@@ -210,7 +210,7 @@ where
     /// but with a check on the current [OperatingMode].
     /// Valid in all OperatingModes except [PoweredOff],
     /// in which case will return [Error::InvalidMethod]
-    pub fn try_read_ambient(&mut self) -> Result<u16, Error<E>> {
+    pub fn try_read_ambient(&mut self) -> Result<u16, Error<I2C::Error>> {
         if self.mode.operating_mode == PoweredOff {
             return Err(Error::InvalidMethod(self.mode.operating_mode));
         }
@@ -221,7 +221,7 @@ where
     /// but with a check on the current [OperatingMode].
     /// Valid in all OperatingModes except [PoweredOff],
     /// in which case will return [Error::InvalidMethod]
-    pub fn try_clear_error_interrupt(&mut self) -> Result<(), Error<E>> {
+    pub fn try_clear_error_interrupt(&mut self) -> Result<(), Error<I2C::Error>> {
         if self.mode.operating_mode == PoweredOff {
             return Err(Error::InvalidMethod(self.mode.operating_mode));
         }
@@ -232,7 +232,7 @@ where
     /// but with a check on the current [OperatingMode].
     /// Valid in all OperatingModes except [PoweredOff],
     /// in which case will return [Error::InvalidMethod]
-    pub fn try_clear_ambient_interrupt(&mut self) -> Result<(), Error<E>> {
+    pub fn try_clear_ambient_interrupt(&mut self) -> Result<(), Error<I2C::Error>> {
         if self.mode.operating_mode == PoweredOff {
             return Err(Error::InvalidMethod(self.mode.operating_mode));
         }
@@ -243,7 +243,7 @@ where
     /// but with a check on the current [OperatingMode].
     /// Valid in all OperatingModes except [PoweredOff],
     /// in which case will return [Error::InvalidMethod]
-    pub fn try_clear_range_interrupt(&mut self) -> Result<(), Error<E>> {
+    pub fn try_clear_range_interrupt(&mut self) -> Result<(), Error<I2C::Error>> {
         if self.mode.operating_mode == PoweredOff {
             return Err(Error::InvalidMethod(self.mode.operating_mode));
         }
@@ -254,7 +254,7 @@ where
     /// but with a check on the current [OperatingMode].
     /// Valid in all OperatingModes except [PoweredOff],
     /// in which case will return [Error::InvalidMethod]
-    pub fn try_clear_all_interrupts(&mut self) -> Result<(), Error<E>> {
+    pub fn try_clear_all_interrupts(&mut self) -> Result<(), Error<I2C::Error>> {
         if self.mode.operating_mode == PoweredOff {
             return Err(Error::InvalidMethod(self.mode.operating_mode));
         }
@@ -265,7 +265,7 @@ where
     /// but with a check on the current [OperatingMode].
     /// Valid in all OperatingModes except [PoweredOff],
     /// in which case will return [Error::InvalidMethod]
-    pub fn try_change_i2c_address(&mut self, new_address: u8) -> Result<(), Error<E>> {
+    pub fn try_change_i2c_address(&mut self, new_address: u8) -> Result<(), Error<I2C::Error>> {
         if self.mode.operating_mode == PoweredOff {
             return Err(Error::InvalidMethod(self.mode.operating_mode));
         }
@@ -295,7 +295,7 @@ where
     pub fn try_power_on_and_init<PE, P: OutputPin<Error = PE>>(
         &mut self,
         x_shutdown_pin: &mut P,
-    ) -> Result<(), Error2<E, PE>> {
+    ) -> Result<(), Error2<I2C::Error, PE>> {
         if self.mode.operating_mode != PoweredOff {
             return Err(Error2::InvalidMethod(self.mode.operating_mode));
         }
