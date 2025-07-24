@@ -44,11 +44,11 @@ where
     fn get_range_val_and_status(&mut self) -> Result<u16, Error<I2C::Error>> {
         let status = self.read_named_register(Register8Bit::RESULT__RANGE_STATUS)?;
         self.clear_range_interrupt_direct()?;
-        let error = RangeStatusErrorCode::try_from(status)
-            .map_err(|_| Error::UnknownRegisterCode(status))?;
-        if error != RangeStatusErrorCode::NoError {
-            return Err(Error::RangeStatusError(error));
-        }
+        //let error = RangeStatusErrorCode::try_from(status)
+        //    .map_err(|_| Error::UnknownRegisterCode(status))?;
+        //if error != RangeStatusErrorCode::NoError {
+        //    return Err(Error::RangeStatusError(error));
+        //}
         let raw_range = self.read_named_register(Register8Bit::RESULT__RANGE_VAL)?;
         Ok(self.convert_raw_range_to_mm(raw_range))
     }
